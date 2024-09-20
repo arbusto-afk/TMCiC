@@ -27,13 +27,12 @@ int parser_isSupportedVersion(char * version)
  * Version independant
  */
 
-int parser_parseMcPacketsFromBuf(unsigned char *buf, int bufDim, client *c)
+int parser_parseMcPacketsFromBuf(uint8_t *buf, int bufDim, client *c)
 {
-    printf("<PS=%d>", bufDim);
     // If bufDim is zero or less, there's nothing to parse
     if (bufDim <= 0) {
-        printf("Buffer is empty, no data to parse.\n");
-        printf("<PARSEREXIT>");
+        printf("emptyBuf");
+        printf("<PARSEREXIT>, ");
 
         return 0;
     }
@@ -55,32 +54,43 @@ int parser_parseMcPacketsFromBuf(unsigned char *buf, int bufDim, client *c)
             printf("<PARSEREXIT>");
             return procBytes;
         }
-
         int totalPacketLen = packetLen.value + packetLen.byteSize;
 
         // Check for invalid or overly large packet lengths
-        if (totalPacketLen > remainingBytes || totalPacketLen < 0)
+        if (totalPacketLen > remainingBytes)
         {
-            printf("Invalid or incomplete packet, exiting with procBytes = %d.\n", procBytes);
-            printf("<PARSEREXIT>");
+            return procBytes;
+        }
+        if(totalPacketLen < 0) {
             return procBytes;
         }
 
         // Handle complete packet
+     /*
+        printf("Parsed <");
+        for(int i=0; i <totalPacketLen && i < 5; i++)
+            printf("%02x ", buf[i]);
+        if(totalPacketLen >= 5) {
+            printf("... ");
+            for(int i = totalPacketLen - 10; i < totalPacketLen; i++)
+                printf("%02x ", buf[i]);
+            printf(">\n");
+        } else {
+            printf(">\n");
+        }*/
         int handlerExitCode = c->packetInterpreter(buf, c);
         if (handlerExitCode != 0)
         {
-            printf("Error reading packet %d\n", handlerExitCode);
-            printf("<PARSEREXIT>");
+            printf("Error interpreting packet %d\n ", handlerExitCode);
             return procBytes;
         }
 
         // Move the buffer forward and update counters
+     //   printf("<p:%d>", totalPacketLen);
         buf += totalPacketLen;
         procBytes += totalPacketLen;
         remainingBytes -= totalPacketLen;
     }
 
-    printf("<PARSEREXIT>");
     return procBytes;
 }

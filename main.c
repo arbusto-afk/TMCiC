@@ -49,20 +49,53 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     sendHandshakeAndLogin(c);
     return c;
 }
-void startListening(client *c)
-{
+
+
+void writeBufferToFile(const uint8_t *buf, int numBytes) {
+    FILE *file = fopen("buffer.txt", "a");  // Open the file in append mode
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    for (int i = 0; i < numBytes; i++) {
+        fprintf(file, "%02x ", buf[i]);  // Write bytes in hexadecimal format
+    }
+    fprintf(file, "\n");
+    fclose(file);  // Close the file after writing
+}
+
+int parser2(uint8_t * buf, int bufDim, client * c){
+    TVarInt res = sharedMain_readVarInt(buf, bufDim);
+    if(res.byteSize < 0) {
+        printf("verr %d\n", res.byteSize);
+            return 0;
+    }
+    puts("ok");
+    return res.value + res.byteSize;
+}
+
+void startListening(client *c) {
     uint8_t buf[MAXBUFDIM] = {0};
+   // for(int i=0; i <MAXBUFDIM;i++)
+     //   buf[i] = 0x00;
     int bufdim = 0;  // The total size of unprocessed data in the buffer
     uint8_t *p = buf;  // Pointer to where new data should be written
 
     while (1) {
         // Receive data into the buffer starting at p
         int recvb = simpleSocket_receiveSocket(c->sockfd, p, MAXBUFDIM - bufdim);
+        writeBufferToFile(p, bufdim + recvb);  // Write only the new bytes received
+
         if (recvb > 0) {
             bufdim += recvb;  // Increase the buffer size by the number of received bytes
 
+            // Log the newly received data to the file
+
             // Process packets in the buffer
             int procB = parser_parseMcPacketsFromBuf(buf, bufdim, c);
+         //   int procB = parser2(buf, bufdim, c);
+
             if (procB > 0) {
                 bufdim -= procB;  // Update the remaining bytes in the buffer
                 // Move unprocessed data to the beginning of the buffer
@@ -81,9 +114,9 @@ void startListening(client *c)
             break;
         }
     }
+
     return;
 }
-
 
 
 int main(void) {

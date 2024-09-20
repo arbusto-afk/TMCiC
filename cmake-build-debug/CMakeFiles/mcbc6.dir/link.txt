@@ -1,0 +1,1 @@
+/usr/bin/cc  -fstack-protector-all -g -Wall -g CMakeFiles/mcbc6.dir/main.c.o CMakeFiles/mcbc6.dir/TVarInt/sharedmain.c.o CMakeFiles/mcbc6.dir/Parser/parser.c.o CMakeFiles/mcbc6.dir/TVarInt/TVarint.c.o CMakeFiles/mcbc6.dir/crossSocket/crossSocket.c.o CMakeFiles/mcbc6.dir/pDef_v1_12_2_2.c.o CMakeFiles/mcbc6.dir/file_io/file_io.c.o -o mcbc6 

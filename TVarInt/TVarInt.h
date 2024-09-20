@@ -31,8 +31,9 @@ typedef struct varInt {
     uint8_t *byteAfterEnd;
 } TVarInt;
 
+#define VARINTEXCEEDSMAXLEN -2000
 #define NULLVARINT ((TVarInt){0, -1, NULL})
-#define NULLVARINTLENOVERFLOW ((TVarInt){0,-2,NULL})
+#define NULLVARINTLENOVERFLOW ((TVarInt){0,VARINTEXCEEDSMAXLEN,NULL})
 
 
 /*

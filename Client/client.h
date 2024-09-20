@@ -5,6 +5,7 @@
 #ifndef MCBC3_CLIENT_H
 #define MCBC3_CLIENT_H
 #include <stdint.h>
+#
 
 typedef struct client {
     int sockfd;
@@ -14,6 +15,7 @@ typedef struct client {
     char * hostname;
     int port;
 
+    //TODO load interpreter according to version
     char * version;
     //both func should be assigned as soon as client is initiliazed;
     int (*packetInterpreter)(uint8_t *buf, struct client *c); //func called by parser, assigned depending on ver
