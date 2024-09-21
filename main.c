@@ -15,6 +15,8 @@ void sendHandshakeAndLogin(client * c)
     packet_t login = pDef_V12_2_2_createLoginPacket(c->playerName);
     simpleSocket_send(c->sockfd, hShake.seq, hShake.dim);
     simpleSocket_send(c->sockfd, login.seq, login.dim);
+    free(hShake.seq);
+    free(login.seq);
     c->state = CSTATE_LOGIN;
 }
 client * initializeAndConnectClient(char *playerName, char *hostname, int port, char * version, packetHandler_t *customHandler, packetInterpreter_t versionPInterpreter)
@@ -44,26 +46,12 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     c->playerName = playerName;
     c->hostname = hostname;
     c->port = port;
-    //   c->customPlayStateHandler = customHandler;
+    c->customPlayStateHandler = customHandler;
 
     sendHandshakeAndLogin(c);
     return c;
 }
 
-
-void writeBufferToFile(const uint8_t *buf, int numBytes) {
-    FILE *file = fopen("buffer.txt", "a");  // Open the file in append mode
-    if (!file) {
-        perror("Error opening file");
-        return;
-    }
-
-    for (int i = 0; i < numBytes; i++) {
-        fprintf(file, "%02x ", buf[i]);  // Write bytes in hexadecimal format
-    }
-    fprintf(file, "\n");
-    fclose(file);  // Close the file after writing
-}
 
 int parser2(uint8_t * buf, int bufDim, client * c){
     TVarInt res = sharedMain_readVarInt(buf, bufDim);
@@ -85,13 +73,12 @@ void startListening(client *c) {
     while (1) {
         // Receive data into the buffer starting at p
         int recvb = simpleSocket_receiveSocket(c->sockfd, p, MAXBUFDIM - bufdim);
-        writeBufferToFile(p, bufdim + recvb);  // Write only the new bytes received
+    //    writeBufferToFile(p, bufdim + recvb);  // Write only the new bytes received
 
         if (recvb > 0) {
             bufdim += recvb;  // Increase the buffer size by the number of received bytes
 
             // Log the newly received data to the file
-
             // Process packets in the buffer
             int procB = parser_parseMcPacketsFromBuf(buf, bufdim, c);
          //   int procB = parser2(buf, bufdim, c);
@@ -114,10 +101,12 @@ void startListening(client *c) {
             break;
         }
     }
-
     return;
 }
 
+void recvChunk(uint* buf, int datalen, client * c){
+//    printf("\nRecveiced chunk\n");
+};
 
 int main(void) {
 
@@ -125,11 +114,13 @@ int main(void) {
     char username[] = "mcbc6";
     int port = 57188;
     char ver[] = "1.12.2";
-    packetHandler_t customHandler[MAXPACKETID] = {NULL};
+    packetHandler_t customHandler[MAXPACKETID] = {[0X20] = (packetHandler_t) recvChunk};
     packetInterpreter_t customInterpreter = pDef_v1_12_2_Interpreter;
 
     client *c = initializeAndConnectClient(username, hostname, port, ver, customHandler, customInterpreter);
 
     startListening(c);
+
+    free(c);
     return 0;
 }

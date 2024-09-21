@@ -5,6 +5,9 @@ set(CMAKE_C_STANDARD 11)
 # Enable stack protection and debug symbols
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-all -g -Wall")
 
+# Find and link zlib
+find_package(ZLIB REQUIRED)
+
 add_executable(mcbc6 main.c
         TVarInt/sharedmain.c
         Client/client.h
@@ -15,3 +18,6 @@ add_executable(mcbc6 main.c
         crossSocket/crossSocket.c
         pDef_v1_12_2_2.c
         file_io/file_io.c)
+
+# Link zlib to the executable
+target_link_libraries(mcbc6 ZLIB::ZLIB)

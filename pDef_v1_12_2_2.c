@@ -5,14 +5,10 @@
 #include "pDef_v1_12_2_2.h"
 //<editor-fold   desc="defines">
 #define TYPELONG_BYTESIZE 8
-#define v1_12_2_CPID_SERVERBOUND_KEEPALIVE 0x0B // client packet id
-#define v1_12_2_CPID_CLIENTBOUND_KEEPALIVE 0x1F
-#define v1_12_2_CPID_CLIENTBOUND_LOGINSUCCESS 0x02
-#define v1_12_2_CPID_CLIENTBOUND_DISCONNECT_PLAY 0x1A
-#define v1_12_2_CPID_CLIENTBOUND_DISCONNECT_LOGIN 0x00
-#define v1_12_2_CPID_CLIENTBOUND_SETCOMPRESSION 0x03
+
 
 #define v1_12_2_ERR_SENT_COMP_TO_UNCOMP_HANDLER -3500
+#define v1_12_2_ERR_SENT_UNCOMP_TO_COMP_HANDLER -3600
 //</editor-fold>
 
 //<editor-fold desc="dph functions">
@@ -62,17 +58,11 @@ static packetHandler_t *defaultGeneralHandler[CSTATE_TOTALCOUNT] = {
 //</editor-fold>
 
 //<editor-fold desc="depc decompression">
-int uncompressPacket(uint8_t *compressedData, int compressedSize, uint8_t *uncompressedData, int uncompressedSize);
-/*int pDef_v1_12_2_Interpreter(uint8_t  * buf, client * c)
-{
-    return 0;
-}*/
-/*
 static int uncompressPacket(uint8_t *compressedData, int compressedSize, uint8_t *uncompressedData, int uncompressedSize)
 {
     if (compressedSize <= 0 || uncompressedSize <= 0) return Z_DATA_ERROR;
 
-    z_stream stream = {0}; // Simplified initialization
+    z_stream stream = {0};  // Simplified initialization
     int status;
 
     stream.avail_in = compressedSize;
@@ -80,47 +70,83 @@ static int uncompressPacket(uint8_t *compressedData, int compressedSize, uint8_t
     stream.avail_out = uncompressedSize;
     stream.next_out = uncompressedData;
 
-    status = inflateInit2(&stream, -MAX_WBITS); // Using raw deflate stream
-    if (status != Z_OK)
-    {
+    status = inflateInit(&stream);  // If raw deflate is needed: inflateInit2(&stream, -MAX_WBITS)
+    if (status != Z_OK) {
+        printf("inflateInit failed with error: %d\n", status);
         return status;
     }
 
-    status = inflate(&stream, Z_FINISH);
+    // Decompress in a loop to handle larger data
+    while ((status = inflate(&stream, Z_NO_FLUSH)) == Z_OK) {
+        // If the output buffer is full but decompression is not finished, you may need to handle resizing here.
+    }
+
+    // Handle end-of-stream or any errors
+    if (status == Z_STREAM_END) {
+        printf("succ uncomp");
+        // Decompression completed successfully
+    } else {
+    //    printf("Decompression failed with error code: %d\n", status);
+    }
+
     inflateEnd(&stream);  // Always clean up
 
     return (status == Z_STREAM_END) ? Z_STREAM_END : status;
 }
-    */
+
 //</editor-fold>
 
+void writeBufferToFile(const uint8_t *buf, int numBytes) {
+    FILE *file = fopen("buffer.txt", "a");  // Open the file in append mode
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    for (int i = 0; i < numBytes; i++) {
+        fprintf(file, "%02x ", buf[i]);  // Write bytes in hexadecimal format
+    }
+    fprintf(file, "\n");
+    fclose(file);  // Close the file after writing
+}
+
+void writeIntToFile(int value) {
+    FILE *file = fopen("buffer2id.txt", "a");  // Open the file in append mode
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    fprintf(file, "%d ", value);  // Write the integer value followed by a newline
+    fclose(file);  // Close the file after writing
+}
 
 /*
  * Receves packetId as int, pointer to data after packetId, dataLen, c
  * Returns 0 or error
  */
 static int pDef_v1_12_2_handlePacketById(int packetId, uint8_t * data, int dataLen, client *c){
-
     int handledPacket = 0;
     //defaultGeneralHandler
     if (defaultGeneralHandler[c->state] != NULL && defaultGeneralHandler[c->state][packetId] != NULL)
     {
         handledPacket = 1;
-        printf("<dh:%02x>, ", packetId);
+        printf("<dh:0x%02x>, ", packetId);
         defaultGeneralHandler[c->state][packetId](data, dataLen, c);
     }
     //customPlayHandler
     if (c->state == CSTATE_PLAY && c->customPlayStateHandler != NULL && c->customPlayStateHandler[packetId] != NULL)
     {
         handledPacket = 1;
-        printf("<ch:%02x>, ", packetId);
+        printf("<ch:0x%02x>, ", packetId);
         c->customPlayStateHandler[packetId](data, dataLen, c);
     }
     //unhandled packet
     if(handledPacket == 0)
     {
-        printf("<uh:%02x>,", packetId);
+        printf("<uh:0x%02x>,", packetId);
     }
+    fflush(stdout);
     return 0;
 }
 /*
@@ -138,18 +164,17 @@ static int pDef_v1_12_2_handlePacketWoutComp(uint8_t * data, int dataLen, client
     int fDataLen = dataLen - packetId.byteSize;
     return pDef_v1_12_2_handlePacketById(packetId.value, packetId.byteAfterEnd, fDataLen, c);
 }
-
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
 static int pDef_v1_12_2_handlePacketWithCompOff(uint8_t * data, int dataLen, client * c) {
     TVarInt uncDataLen = sharedMain_readVarInt(data, dataLen);
-   // if (uncDataLen.byteSize < 0)
-  //      return uncDataLen.byteSize;
+    if (uncDataLen.byteSize < 0)
+        return uncDataLen.byteSize;
     if (uncDataLen.value != 0) {
         printf("[");
         for(int i = 0; i < 5; i++)
-            printf("%02 ", data[i]);
+            printf("%02x ", data[i]);
         printf("]\n");
         return v1_12_2_ERR_SENT_COMP_TO_UNCOMP_HANDLER;
         }
@@ -160,12 +185,44 @@ static int pDef_v1_12_2_handlePacketWithCompOff(uint8_t * data, int dataLen, cli
     int fDataLen = dataLen - packetId.byteSize;
     return pDef_v1_12_2_handlePacketById(packetId.value, packetId.byteAfterEnd, fDataLen, c);
 }
-
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
 static int pDef_v1_12_2_handlePacketWithCompOn(uint8_t * data, int dataLen, client * c)
 {
+    TVarInt uncompressedLen = sharedMain_readVarInt(data, dataLen);
+    if(uncompressedLen.byteSize < 0)
+        return uncompressedLen.byteSize -3;
+    if(uncompressedLen.value == 0)
+        return v1_12_2_ERR_SENT_UNCOMP_TO_COMP_HANDLER;
+    
+    uint8_t * uncompressedBuffer = calloc(1,uncompressedLen.value);
+    if(uncompressedBuffer == NULL || errno == ENOMEM)
+    {
+        free(uncompressedBuffer);
+        return -1;
+    }
+
+    int status = uncompressPacket(uncompressedLen.byteAfterEnd, dataLen - uncompressedLen.byteSize, uncompressedBuffer, uncompressedLen.value);
+    if (status == Z_STREAM_END) {
+        // Decompression successful
+      //  printf("Decompression completed successfully.\n");
+    } else {
+        // Handle errors (you can check specific error codes or handle all errors similarly)
+    //    printf("Decompression failed with error code: %d\n", status);
+      //  printf("Compressed size: %d\n", dataLen - uncompressedLen.byteSize);
+       // printf("Expected uncompressed size: %d\n", uncompressedLen.value);
+       free(uncompressedBuffer);
+        return status;  // Return the error for further debugging
+    }
+
+    TVarInt packetId = sharedMain_readVarInt(uncompressedBuffer, uncompressedLen.value);
+    if(packetId.byteSize < 0) {
+        free(uncompressedBuffer);
+        return packetId.byteSize - 2;
+    }
+    pDef_v1_12_2_handlePacketById(packetId.value,packetId.byteAfterEnd, uncompressedLen.value - packetId.byteSize, c);
+    free(uncompressedBuffer);
     return 0;
 }
 
@@ -173,23 +230,23 @@ static int pDef_v1_12_2_handlePacketWithCompOn(uint8_t * data, int dataLen, clie
  * Assumes complete packet
  */
 int pDef_v1_12_2_Interpreter(uint8_t *buf, client *c)
-{
-        TVarInt packetLen = sharedMain_readVarInt(buf, VARINTPACKETMAXLEN);
-        if (c->compressionTreshold < 0) {
-            return pDef_v1_12_2_handlePacketWoutComp(packetLen.byteAfterEnd, packetLen.value, c);
-        }
-        else
-        {
-            //Packet ID + data uncomrpessed len
-            TVarInt uncompressedPacketLen = sharedMain_readVarInt(packetLen.byteAfterEnd, VARINTPACKETMAXLEN);
-
-            if (uncompressedPacketLen.value == 0)
-                return pDef_v1_12_2_handlePacketWithCompOff(packetLen.byteAfterEnd, packetLen.value, c);
+    {
+            TVarInt packetLen = sharedMain_readVarInt(buf, VARINTPACKETMAXLEN);
+            if (c->compressionTreshold < 0) {
+                return pDef_v1_12_2_handlePacketWoutComp(packetLen.byteAfterEnd, packetLen.value, c);
+            }
             else
-                return pDef_v1_12_2_handlePacketWithCompOn(packetLen.byteAfterEnd, packetLen.value, c);
+            {
+                //Packet ID + data uncomrpessed len
+                TVarInt uncompressedPacketLen = sharedMain_readVarInt(packetLen.byteAfterEnd, VARINTPACKETMAXLEN);
 
+                if (uncompressedPacketLen.value == 0)
+                    return pDef_v1_12_2_handlePacketWithCompOff(packetLen.byteAfterEnd, packetLen.value, c);
+                else
+                    return pDef_v1_12_2_handlePacketWithCompOn(packetLen.byteAfterEnd, packetLen.value, c);
+
+            }
         }
-    }
 
 packet_t pDef_V12_2_2_createHandShakePacket(int protocolVer, const unsigned char *serverAdress, unsigned short port, int nextState) {
     unsigned char *handshakePacket = malloc(1024); // 0.5kb
@@ -222,7 +279,6 @@ packet_t pDef_V12_2_2_createHandShakePacket(int protocolVer, const unsigned char
 
     return res;
 }
-
 packet_t pDef_V12_2_2_createLoginPacket(const char *playerName) {
     unsigned char *loginPacket = malloc(256);
     unsigned char *startPtr = loginPacket;
@@ -238,7 +294,7 @@ packet_t pDef_V12_2_2_createLoginPacket(const char *playerName) {
     finalLoginPacket = sharedMain_writeVarInt(finalLoginPacket, loginPacketByteSize);
     finalLoginPacket = memcpy(finalLoginPacket, startPtr, loginPacketByteSize);
     free(startPtr);
-    long byteLength = finalLoginPacket - finalStartAdress + loginPacketByteSize;
+    int byteLength = finalLoginPacket - finalStartAdress + loginPacketByteSize;
 
     packet_t res;
     res.seq = finalStartAdress;
