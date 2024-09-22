@@ -1,0 +1,10 @@
+//
+// Created by Ignacio on 9/22/2024.
+//
+
+#ifndef MCBC6_ERRORCODES_H
+#define MCBC6_ERRORCODES_H
+
+#define v1_12_2_ERR_SENT_COMP_TO_UNCOMP_HANDLER -3500
+#define v1_12_2_ERR_SENT_UNCOMP_TO_COMP_HANDLER -3600
+#endif //MCBC6_ERRORCODES_H

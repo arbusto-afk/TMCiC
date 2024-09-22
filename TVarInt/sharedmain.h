@@ -7,12 +7,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#define CSTATE_STATUS 0
-#define CSTATE_LOGIN 1
-#define CSTATE_TRANSFER 2
-#define CSTATE_CONFIGURATION 3
-#define CSTATE_PLAY 4
-#define CSTATE_TOTALCOUNT 5
 
 //in 1.12.2 client goes from handshake directly to play
 //1.12.2 status 1 login 2

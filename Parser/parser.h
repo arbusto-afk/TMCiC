@@ -5,7 +5,7 @@
 #ifndef MCBC3_PARSER_H
 #define MCBC3_PARSER_H
 
-#include "../Client/client.h"
+#include "../Defs/clientDef.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -14,11 +14,6 @@
 #include "../file_io/file_io.h"
 
 #define MAXPACKETID 128
-
-typedef struct packet{
-    uint8_t * seq;
-    int dim;
-} packet_t;
 
 int parser_isSupportedVersion(char * version);
 

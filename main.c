@@ -1,25 +1,30 @@
 #include <stdio.h>
 
 
-#include "Client/client.h"
+#include "Defs/clientDef.h"
 #include "crossSocket/crossSocket.h"
 #include "Parser/parser.h"
-#include "pDef_v1_12_2_2.h"
+#include "Versions/v1_12_2/pDef_v1_12_2_2.h"
 
 #include "file_io/file_io.h"
+#include "Versions/v1_12_2/Interpreter/Interpreter.h"
+#include "Defs/clientDef.h"
+#include "Versions/v1_12_2/HshakeAndLogin/HshakeAndLogin.h"
+#include "Defs/PacketDef.h"
+
 #define MAXBUFDIM 1024 * 1024 //1mb
 
 void sendHandshakeAndLogin(client * c)
 {
-    packet_t hShake = pDef_V12_2_2_createHandShakePacket(340, c->hostname, c->port, 2);
-    packet_t login = pDef_V12_2_2_createLoginPacket(c->playerName);
+    packet_t hShake = public_V1_12_2_createHandShakePacket(340, c->hostname, c->port, 2);
+    packet_t login = public_V1_12_2_createLoginPacket(c->playerName);
     simpleSocket_send(c->sockfd, hShake.seq, hShake.dim);
     simpleSocket_send(c->sockfd, login.seq, login.dim);
     free(hShake.seq);
     free(login.seq);
     c->state = CSTATE_LOGIN;
 }
-client * initializeAndConnectClient(char *playerName, char *hostname, int port, char * version, packetHandler_t *customHandler, packetInterpreter_t versionPInterpreter)
+client * initializeAndConnectClient(char *playerName, char *hostname, int port, char * version, packetHandler_t *customHandler)
 {
     int sockfd = simpleSocket_setSocket(hostname, port);
 
@@ -38,8 +43,10 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
 
     c-> version = version;
     //TODO map version to index;
-    c->packetInterpreter = versionPInterpreter;
-
+    if(1) {
+        c->packetInterpreter = internal_v1_12_2_defaultInterpreter;
+        c->defaultGeneralHandler = internal_v1_12_2_defaultGeneralHandler;
+    }
     c->compressionTreshold = -1;
     c->sockfd = sockfd;
     c->state = -1;
@@ -115,9 +122,9 @@ int main(void) {
     int port = 57188;
     char ver[] = "1.12.2";
     packetHandler_t customHandler[MAXPACKETID] = {[0X20] = (packetHandler_t) recvChunk};
-    packetInterpreter_t customInterpreter = pDef_v1_12_2_Interpreter;
+    packetInterpreter_t customInterpreter = internal_v1_12_2_defaultInterpreter;
 
-    client *c = initializeAndConnectClient(username, hostname, port, ver, customHandler, customInterpreter);
+    client *c = initializeAndConnectClient(username, hostname, port, ver, customHandler);
 
     startListening(c);
 

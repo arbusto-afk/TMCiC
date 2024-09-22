@@ -25,11 +25,12 @@ Server auth, both enable encryption
 S→C: Set Compression (optional)
 S→C: Login Success
  */
-typedef struct varInt {
+typedef struct {
     int value;
     int byteSize;
     uint8_t *byteAfterEnd;
 } TVarInt;
+
 
 #define VARINTEXCEEDSMAXLEN -2000
 #define NULLVARINT ((TVarInt){0, -1, NULL})
