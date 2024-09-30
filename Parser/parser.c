@@ -82,6 +82,9 @@ int parser_parseMcPacketsFromBuf(uint8_t *buf, int bufDim, client *c)
         if (handlerExitCode != 0)
         {
             printf("Parser: Error interpreting packet %d with totallen: %d\n", handlerExitCode, totalPacketLen);
+          //  for(int i = 0; i < 50; i++)
+          //      printf( "%02x ", buf[i]);
+         //   fflush(stdout);
             return procBytes;
         }
 

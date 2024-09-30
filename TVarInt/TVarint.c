@@ -4,7 +4,7 @@
 
 #include "TVarInt.h"
 
-TVarInt sharedMain_readVarInt(uint8_t *buf, int bufDim) {
+TVarInt sharedMain_readVarInt(const uint8_t *buf, int bufDim) {
 
     if (buf == NULL) {
         return NULLVARINT;

@@ -6,7 +6,7 @@
 #define MCBC6_HSHAKEANDLOGIN_H
 
 #include "../../../Parser/parser.h"
-#include "../../../Defs/clientDef.h"
+#include "../../../Defs/ClientDef.h"
 #include "../../../crossSocket/crossSocket.h"
 #include "../../../Defs/PacketDef.h"
 #include <stdio.h>

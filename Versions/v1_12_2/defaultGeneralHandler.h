@@ -12,11 +12,18 @@
 #define v1_12_2_CPID_CLIENTBOUND_DISCONNECT_LOGIN 0x00
 #define v1_12_2_CPID_CLIENTBOUND_SETCOMPRESSION 0x03
 
+#define v1_12_2_CPID_CLIENTBOUND_CHUNKDATA 0x20
+#define v1_12_2_CPID_CLIENTBOUND_PLAYER_POSITION_AND_LOOK 0x2F
+
 #include <string.h>
 #include <stdio.h>
+
+#include "../../Defs/ChunkHashFunc.h"
 #include "../../crossSocket/crossSocket.h"
-#include "../../Defs/clientDef.h"
+#include "../../Defs/ClientDef.h"
+#include "../../Defs/ChunkDef.h"
 #include "../../Parser/parser.h"
+#include "../../TVarInt/sharedmain.h"
 #include "zlib.h"
 
 

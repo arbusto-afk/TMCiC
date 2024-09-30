@@ -62,16 +62,16 @@ namespace DotZLibTests
         public void BlockPutGet()
         {
             CircularBuffer buf = new CircularBuffer(10);
-            byte[] arr = {1,2,3,4,5,6,7,8,9,10};
-            Assert.AreEqual( 10, buf.Put(arr,0,10) );
+            byte[] sectionArr = {1,2,3,4,5,6,7,8,9,10};
+            Assert.AreEqual( 10, buf.Put(sectionArr,0,10) );
             Assert.AreEqual( 10, buf.Size );
             Assert.IsFalse( buf.Put(11) );
             Assert.AreEqual( 1, buf.Get() );
             Assert.IsTrue( buf.Put(11) );
 
-            byte[] arr2 = (byte[])arr.Clone();
+            byte[] arr2 = (byte[])sectionArr.Clone();
             Assert.AreEqual( 9, buf.Get(arr2,1,9) );
-            Assert.IsTrue( Utils.byteArrEqual(arr,arr2) );
+            Assert.IsTrue( Utils.byteArrEqual(sectionArr,arr2) );
         }
 
         #endregion

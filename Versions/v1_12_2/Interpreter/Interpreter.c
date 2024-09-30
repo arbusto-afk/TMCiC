@@ -4,65 +4,6 @@
 
 #include "Interpreter.h"
 
-static int uncompressPacket(uint8_t *compressed_data, int compressed_size, uint8_t *uncompressed_data, int uncompressed_size) {
-    if (compressed_size <= 0 || uncompressed_size <= 0) {
-        printf("Invalid compressed or uncompressed size.\n");
-        return Z_DATA_ERROR;
-    }
-
-    z_stream stream = {0};  // Initialize the z_stream structure
-    int status;
-
-    // First attempt: Use raw deflate (no headers)
-    stream.avail_in = compressed_size;
-    stream.next_in = compressed_data;
-    stream.avail_out = uncompressed_size;
-    stream.next_out = uncompressed_data;
-
-    status = inflateInit2(&stream, -MAX_WBITS);
-    if (status != Z_OK) {
-        printf("inflateInit2 (raw deflate) failed with error: %d\n", status);
-        return status;
-    }
-
-    // Try decompressing with raw deflate
-    status = inflate(&stream, Z_FINISH);
-    if (status == Z_STREAM_END) {
-        printf("Decompression successful using raw deflate.\n");
-        inflateEnd(&stream);
-        return Z_OK;
-    }
-
-    // Clean up and reset for second attempt with zlib headers
-    inflateEnd(&stream);
-//    printf("Raw deflate failed, attempting with zlib headers...\n");
-
-    // Second attempt: Use zlib headers
-    stream = (z_stream){0};  // Reinitialize the stream structure
-    stream.avail_in = compressed_size;
-    stream.next_in = compressed_data;
-    stream.avail_out = uncompressed_size;
-    stream.next_out = uncompressed_data;
-
-    status = inflateInit(&stream);  // Default zlib initialization (with headers)
-    if (status != Z_OK) {
-   //     printf("inflateInit (zlib headers) failed with error: %d\n", status);
-        return status;
-    }
-
-    // Try decompressing with zlib headers
-    status = inflate(&stream, Z_FINISH);
-    if (status == Z_STREAM_END) {
-   //     printf("Decompression successful using zlib headers.\n");
-    } else {
-   //     printf("Decompression failed with error code: %d\n", status);
-    }
-
-    inflateEnd(&stream);  // Always clean up
-
-    return (status == Z_STREAM_END) ? Z_OK : status;
-}
-
 /*
  * Receves packetId as int, pointer to data after packetId, dataLen, c
  * Returns 0 or error
@@ -95,7 +36,7 @@ static int pDef_v1_12_2_handlePacketById(int packetId, uint8_t * data, int dataL
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
-static int packetWoutComp(uint8_t * data, int dataLen, client * c)
+static int packetWoutComp(const uint8_t * data, int dataLen, client * c)
 {
     int aux = VARINTMAXLEN;
     if(dataLen < VARINTMAXLEN)
@@ -110,7 +51,7 @@ static int packetWoutComp(uint8_t * data, int dataLen, client * c)
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
-static int packetWithCompOff(uint8_t * data, int dataLen, client * c) {
+static int packetWithCompOff(const uint8_t * data, int dataLen, client * c) {
     TVarInt uncDataLen = sharedMain_readVarInt(data, dataLen);
     if (uncDataLen.byteSize < 0)
         return uncDataLen.byteSize;
@@ -131,47 +72,58 @@ static int packetWithCompOff(uint8_t * data, int dataLen, client * c) {
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
-static int packetWithCompOn(uint8_t * data, int dataLen, client * c)
-{
-    TVarInt uncompressedLen = sharedMain_readVarInt(data, dataLen);
-    if(uncompressedLen.byteSize < 0)
-        return uncompressedLen.byteSize -3;
-    if(uncompressedLen.value == 0)
-        return v1_12_2_ERR_SENT_UNCOMP_TO_COMP_HANDLER;
-
-    uint8_t * uncompressedBuffer = calloc(1,uncompressedLen.value);
-    if(uncompressedBuffer == NULL || errno == ENOMEM)
+static int packetWithCompOn(const uint8_t * data, int dataLen, client * c)
     {
-        free(uncompressedBuffer);
-        return -1;
-    }
+        TVarInt uncompressedLen = sharedMain_readVarInt(data, dataLen);
+        if(uncompressedLen.byteSize < 0)
+            return uncompressedLen.byteSize -3;
+        if(uncompressedLen.value == 0)
+            return v1_12_2_ERR_SENT_UNCOMP_TO_COMP_HANDLER;
 
-    int status = uncompressPacket(uncompressedLen.byteAfterEnd, dataLen - uncompressedLen.byteSize, uncompressedBuffer, uncompressedLen.value);
-    if (status == Z_STREAM_END) {
-        // Decompression successful
-      //  printf("Decompression completed successfully.\n");
-    } else {
-        // Handle errors (you can check specific error codes or handle all errors similarly)
-    //    printf("Decompression failed with error code: %d\n", status);
-      //  printf("Compressed size: %d\n", dataLen - uncompressedLen.byteSize);
-       // printf("Expected uncompressed size: %d\n", uncompressedLen.value);
-       free(uncompressedBuffer);
-        return status;  // Return the error for further debugging
-    }
+        uint8_t * uncompressedBuffer = calloc(1,uncompressedLen.value);
+        if(uncompressedBuffer == NULL)
+        {
+            //free(uncompressedBuffer);
+            return -1;
+        }
 
-    TVarInt packetId = sharedMain_readVarInt(uncompressedBuffer, uncompressedLen.value);
-    if(packetId.byteSize < 0) {
+       // uncompressPacket(uncompressedLen.byteAfterEnd, dataLen - uncompressedLen.byteSize, uncompressedBuffer, uncompressedLen.value);
+
+        int status = uncompress(uncompressedBuffer, &uncompressedLen.value, uncompressedLen.byteAfterEnd, dataLen - uncompressedLen.byteSize);
+        if (status == Z_STREAM_END || status == Z_OK)
+        {
+            // Decompression successful
+        //   printf("Decompression completed successfully.\n");
+        }
+        else
+        {
+            // Handle errors (you can check specific error codes or handle all errors similarly)
+        //  printf("Decompression failed with error code: %d\n", status);
+          //  printf("Compressed size: %d\n", dataLen - uncompressedLen.byteSize);
+           // printf("Expected uncompressed size: %d\n", uncompressedLen.value);
+           free(uncompressedBuffer);
+            return status;  // Return the error for further debugging
+        }
+      //  fflush(stdout);
+
+        TVarInt packetId = sharedMain_readVarInt(uncompressedBuffer, uncompressedLen.value);
+        if(packetId.byteSize < 0)
+        {
+            free(uncompressedBuffer);
+            return packetId.byteSize - 2;
+        }
+
+        pDef_v1_12_2_handlePacketById(packetId.value,packetId.byteAfterEnd, uncompressedLen.value, c);
+
+       // printf("Prefree");
+       //    fflush(stdout);
         free(uncompressedBuffer);
-        return packetId.byteSize - 2;
+        return 0;
     }
-    pDef_v1_12_2_handlePacketById(packetId.value,packetId.byteAfterEnd, uncompressedLen.value - packetId.byteSize, c);
-    free(uncompressedBuffer);
-    return 0;
-}
 /*
  * Assumes complete packet
  */
-int internal_v1_12_2_defaultInterpreter(uint8_t *buf, client *c)
+int internal_v1_12_2_defaultInterpreter(const uint8_t *buf, client *c)
     {
             TVarInt packetLen = sharedMain_readVarInt(buf, VARINTPACKETMAXLEN);
             if (c->compressionTreshold < 0) {

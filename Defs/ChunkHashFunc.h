@@ -5,4 +5,10 @@
 #ifndef MCBC6_CHUNKHASHFUNC_H
 #define MCBC6_CHUNKHASHFUNC_H
 
+#include <stdint.h>
+#include <stdlib.h>
+
+size_t hash2d(int x, int y);
+
+
 #endif //MCBC6_CHUNKHASHFUNC_H

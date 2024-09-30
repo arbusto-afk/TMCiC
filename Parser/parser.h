@@ -5,7 +5,7 @@
 #ifndef MCBC3_PARSER_H
 #define MCBC3_PARSER_H
 
-#include "../Defs/clientDef.h"
+#include "../Defs/ClientDef.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>

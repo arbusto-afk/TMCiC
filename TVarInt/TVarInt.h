@@ -25,7 +25,7 @@ Server auth, both enable encryption
 S→C: Set Compression (optional)
 S→C: Login Success
  */
-typedef struct {
+typedef struct varInt{
     int value;
     int byteSize;
     uint8_t *byteAfterEnd;
@@ -42,7 +42,7 @@ typedef struct {
  * Performs compulsory  bounds checking
  * Return a varint or nullVarInt on error
  */
-TVarInt sharedMain_readVarInt(uint8_t *buf, int bufDim);
+TVarInt sharedMain_readVarInt(const uint8_t *buf, int bufDim);
 
 /*
  * Writes a varInt into a mem address

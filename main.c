@@ -1,14 +1,14 @@
 #include <stdio.h>
 
 
-#include "Defs/clientDef.h"
+#include "Defs/ClientDef.h"
 #include "crossSocket/crossSocket.h"
 #include "Parser/parser.h"
-#include "Versions/v1_12_2/pDef_v1_12_2_2.h"
+#include "Versions/v1_12_2/defaultGeneralHandler.h"
 
 #include "file_io/file_io.h"
 #include "Versions/v1_12_2/Interpreter/Interpreter.h"
-#include "Defs/clientDef.h"
+#include "Defs/ClientDef.h"
 #include "Versions/v1_12_2/HshakeAndLogin/HshakeAndLogin.h"
 #include "Defs/PacketDef.h"
 
@@ -47,6 +47,11 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
         c->packetInterpreter = internal_v1_12_2_defaultInterpreter;
         c->defaultGeneralHandler = internal_v1_12_2_defaultGeneralHandler;
     }
+    for(int i = 0; i < CHUNK_HASHVEC_DIM; i++)
+        c->chunkHashVec[i] = NULL;
+
+
+
     c->compressionTreshold = -1;
     c->sockfd = sockfd;
     c->state = -1;
@@ -76,7 +81,6 @@ void startListening(client *c) {
      //   buf[i] = 0x00;
     int bufdim = 0;  // The total size of unprocessed data in the buffer
     uint8_t *p = buf;  // Pointer to where new data should be written
-
     while (1) {
         // Receive data into the buffer starting at p
         int recvb = simpleSocket_receiveSocket(c->sockfd, p, MAXBUFDIM - bufdim);
@@ -121,10 +125,12 @@ int main(void) {
     char username[] = "mcbc6";
     int port = 57188;
     char ver[] = "1.12.2";
-    packetHandler_t customHandler[MAXPACKETID] = {[0X20] = (packetHandler_t) recvChunk};
-    packetInterpreter_t customInterpreter = internal_v1_12_2_defaultInterpreter;
+    //printf("START\n");
 
-    client *c = initializeAndConnectClient(username, hostname, port, ver, customHandler);
+    packetHandler_t customHandler[MAXPACKETID] = {[0X20] = (packetHandler_t) recvChunk};
+    //packetInterpreter_t customInterpreter = internal_v1_12_2_defaultInterpreter;
+
+    client *c = initializeAndConnectClient(username, hostname, port, ver, NULL);
 
     startListening(c);
 
