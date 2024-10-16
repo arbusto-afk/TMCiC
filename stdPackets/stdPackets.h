@@ -5,10 +5,10 @@
 #ifndef MCBC6_STDPACKETS_H
 #define MCBC6_STDPACKETS_H
 
-#include "setCompression.h"
-#include "keepAlive.h"
-#include "disconnect.h"
-#include "playerPositionAndLook.h"
-#include "Serialize/teleportConfirm.h"
+#include "Deserializer/setCompression.h"
+#include "Deserializer/keepAlive.h"
+#include "Deserializer/disconnect.h"
+#include "Deserializer/playerPositionAndLook.h"
+#include "Serializer/teleportConfirm.h"
 
 #endif //MCBC6_STDPACKETS_H

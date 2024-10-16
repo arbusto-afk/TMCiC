@@ -7,10 +7,15 @@
 #include "Versions/v1_12_2/defaultGeneralHandler.h"
 
 #include "file_io/file_io.h"
-#include "Versions/v1_12_2/Interpreter/Interpreter.h"
+#include "Versions/v1_12_2/Interpreter/v1_12_2_Interpreter.h"
 #include "Defs/ClientDef.h"
 #include "Versions/v1_12_2/HshakeAndLogin/HshakeAndLogin.h"
 #include "Defs/PacketDef.h"
+
+#include "Std/internal_std_getBlockAtVec3.h"
+
+#include <pthread.h>
+#include <unistd.h>
 
 #define MAXBUFDIM 1024 * 1024 //1mb
 
@@ -64,7 +69,41 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     return c;
 }
 
+void* readline_thread(void* arg) {
+    client *c = (client *)arg; // Assuming client is passed in `arg`
+    char buffer[256];
+    int x, y, z;
 
+    printf("Enter input (non-blocking readline):\n");
+    while (1) {
+        // Read input from the user
+        if (fgets(buffer, sizeof(buffer), stdin)) {
+            // Check if the input matches the expected command and extract the coordinates
+            if (sscanf(buffer, "getBlockAtVec3 %d %d %d", &x, &y, &z) == 3) {
+                // Call the function and print the block globalId
+                TBlock *block = getBlockAtVec3(x, y, z, c);
+                if (block != NULL) {
+                    printf("Block at (%d, %d, %d) has globalId: %u\n", x, y, z, block->globalId);
+                } else {
+                    printf("Block not found at (%d, %d, %d)\n", x, y, z);
+                }
+            } else {
+                printf("Invalid input. Use: getBlockAtVec3 x y z\n");
+            }
+
+            fflush(stdout); // Flush the output buffer
+        } else {
+            printf("Error reading input.\n");
+            fflush(stdout); // Flush the output buffer
+        }
+    }
+
+    return NULL;
+}
+
+/*
+ * Legacy do not use
+ */
 int parser2(uint8_t * buf, int bufDim, client * c){
     TVarInt res = sharedMain_readVarInt(buf, bufDim);
     if(res.byteSize < 0) {
@@ -132,7 +171,16 @@ int main(void) {
 
     client *c = initializeAndConnectClient(username, hostname, port, ver, NULL);
 
+    pthread_t readline_thread_id;
+
+    // Create a thread for the readline function
+    if (pthread_create(&readline_thread_id, NULL, readline_thread, c) != 0) {
+        perror("Failed to create readline thread");
+        return 1;
+    }
     startListening(c);
+
+    pthread_join(readline_thread_id, NULL);
 
     free(c);
     return 0;

@@ -8,6 +8,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-all -g -Wall")
 # Find and link zlib
 find_package(ZLIB REQUIRED)
 
+# Find and link the math library
+find_library(MATH_LIBRARY m)
+
 add_executable(mcbc6 main.c
         TVarInt/sharedmain.c
         Defs/ClientDef.h
@@ -18,24 +21,40 @@ add_executable(mcbc6 main.c
         crossSocket/crossSocket.c
         Versions/v1_12_2/defaultGeneralHandler.c
         file_io/file_io.c
-        Versions/v1_12_2/Interpreter/Interpreter.c
+        Versions/v1_12_2/Interpreter/v1_12_2_Interpreter.c
         Versions/v1_12_2/HshakeAndLogin/HshakeAndLogin.c
         Defs/ChunkDef.h
         Defs/ChunkDef.h
         Defs/TPoint2d.h
         Defs/ChunkHashFunc.c
         Defs/ChunkHashFunc.h
-        stdPackets/setCompression.c
-        stdPackets/setCompression.c
-        stdPackets/disconnect.c
-        stdPackets/keepAlive.c
-        Versions/v1_12_2/chunkData.c
-        stdPackets/playerPositionAndLook.c
-        stdPackets/playerPositionAndLook.h
-        stdPackets/Serialize/teleportConfirm.c
-        stdPackets/Serialize/teleportConfirm.h
+        stdPackets/Deserializer/setCompression.c
+        stdPackets/Deserializer/setCompression.c
+        stdPackets/Deserializer/disconnect.c
+        stdPackets/Deserializer/keepAlive.c
+        Versions/v1_12_2/Deserializer/v1_12_2_chunkData.c
+        stdPackets/Deserializer/playerPositionAndLook.c
+        stdPackets/Deserializer/playerPositionAndLook.h
+        stdPackets/Serializer/teleportConfirm.c
+        stdPackets/Serializer/teleportConfirm.h
         stdPackets/stdPackets.h
+        Defs/Physics.h
+        Defs/Physics.h
+        Std/internal_std_getChunk.c
+        Public/public_getBlockAtCoords.c
+        Std/internal_std_getClientChunk.c
+        Std/internal_std_getClientChunk.h
+        Std/internal_std_isOnGround.c
+        Std/internal_std_isOnGround.h
+        Defs/isInSortedArr.c
+        Defs/isInSortedArr.h
+        Std/internal_std_getBlockAtVec3.c
+        Std/internal_std_getBlockAtVec3.h
+        Defs/ColliderDefs.c
+        Defs/ColliderDefs.h
+        Defs/PacketDef.h
+        Defs/StdIdDef.h
 )
 
-# Link zlib to the executable
-target_link_libraries(mcbc6 ZLIB::ZLIB)
+# Link zlib and math to the executable
+target_link_libraries(mcbc6 ZLIB::ZLIB ${MATH_LIBRARY})

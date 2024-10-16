@@ -7,8 +7,10 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "TPoint2d.h"
 
 size_t hash2d(int x, int y);
 
+size_t hash2d_pt(TPoint2d p);
 
 #endif //MCBC6_CHUNKHASHFUNC_H

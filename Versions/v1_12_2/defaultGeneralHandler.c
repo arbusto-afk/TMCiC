@@ -5,7 +5,7 @@
 #include "defaultGeneralHandler.h"
 
 #include "../../stdPackets/stdPackets.h"
-#include "chunkData.h"
+#include "Deserializer/v1_12_2_chunkData.h"
 //<editor-fold   desc="defines">
 #define TYPELONG_BYTESIZE 8
 
@@ -14,25 +14,22 @@
 
 // default packet handler used for basic 1.12.2 operation
 
-void loginSuccess(const uint8_t *buf, int dataLen, struct client *c) {
+void internal_v1_12_2_loginSuccess(const uint8_t *buf, int dataLen, struct client *c) {
     c->state = CSTATE_PLAY;
 }
 
-
-
-//</editor-fold>
 
 //<editor-fold desc="packetHandler_t *defaultPacketHandler">
 static packetHandler_t defaultPackets_stateStatus[MAXPACKETID] = {0};
 static packetHandler_t stateLoginPackets[MAXPACKETID] = {
         [v1_12_2_CPID_CLIENTBOUND_DISCONNECT_LOGIN] = internal_std_packet_onDisconnect,
-        [v1_12_2_CPID_CLIENTBOUND_LOGINSUCCESS] = loginSuccess,
+        [v1_12_2_CPID_CLIENTBOUND_LOGINSUCCESS] = internal_v1_12_2_loginSuccess,
         [v1_12_2_CPID_CLIENTBOUND_SETCOMPRESSION] = internal_std_packet_setCompression};
 static packetHandler_t stateConfigPackets[MAXPACKETID] = {};
 static packetHandler_t statePlayPackets[MAXPACKETID] = {
         [v1_12_2_CPID_CLIENTBOUND_KEEPALIVE] = internal_std_packet_KeepAlive,
         [v1_12_2_CPID_CLIENTBOUND_DISCONNECT_PLAY] = internal_std_packet_onDisconnect,
-        [v1_12_2_CPID_CLIENTBOUND_CHUNKDATA] = internal_v1_12_2_chunkData,
+        [v1_12_2_CPID_CLIENTBOUND_CHUNKDATA] = internal_v1_12_2_deserializer_chunkData,
         [v1_12_2_CPID_CLIENTBOUND_PLAYER_POSITION_AND_LOOK] = internal_std_packet_playerPositionAndLook
 };
 

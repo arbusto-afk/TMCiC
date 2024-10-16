@@ -18,3 +18,7 @@ size_t hash2d(int x, int z) {
 
     return hash;
 }
+
+size_t hash2d_pt(TPoint2d p){
+    return hash2d(p.x, p.y);
+}

@@ -5,17 +5,16 @@
     #ifndef MCBC6_CHUNKDEF_H
     #define MCBC6_CHUNKDEF_H
 
-    #include "TPoint2d.h"
     #define CHUNKSECTION_DIM 16
     #define CHUNKSECTION_BLOCKCOUNT (CHUNKSECTION_DIM * CHUNKSECTION_DIM * CHUNKSECTION_DIM)
 
     typedef struct {
         unsigned int globalId;
-    } TBlockId;
+    } TBlock;
 
     typedef struct {
-        TBlockId blockMatrix[CHUNKSECTION_DIM][CHUNKSECTION_DIM][CHUNKSECTION_DIM];
-    //    TBlockId *palette; //unused
+        TBlock blockMatrix[CHUNKSECTION_DIM][CHUNKSECTION_DIM][CHUNKSECTION_DIM];
+    //    TBlock *palette; //unused
     //    int paletteDim; //unsued
     } TChunkSection;
 
@@ -25,7 +24,7 @@
 
         TChunkSection * sectionArr;
         int sectionArrDim; //chunk height in sections
-    //    TBlockId *palette; //unused
+    //    TBlock *palette; //unused
      //   int paletteDim; //unused
     } TChunk;
 

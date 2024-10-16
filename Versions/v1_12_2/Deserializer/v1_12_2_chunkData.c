@@ -4,45 +4,14 @@
 
 #define TYPELONG_BITCOUNT 64
 
-#include "chunkData.h"
-#include "../../Defs/ErrorCodes.h"
-
-TChunk * getChunk(int x, int z, client *c) {
-    // Calculate the hash key for the given chunk coordinates
-    int hashKey = hash2d(x, z);
-
-    // Traverse the hash list for the given hash key
-    TChunkHashNode *current = c->chunkHashVec[hashKey];
-
-    // Loop through the linked list to find the correct chunk
-    while (current != NULL) {
-        // Assuming the chunk structure has chunkX and chunkZ as the coordinates
-        if (current->chunk->x == x && current->chunk->x == z) {
-            return current->chunk;  // Found the chunk, return it
-        }
-        current = current->tail;  // Move to the next node in the list
-    }
-
-    // If no chunk was found, return NULL
-    return NULL;
-}
-
-int public_getBlockAtCoords(int x, int y, int z, struct client * c)
-{
-    int chunkX = x / 16;
-    int chunkZ = z / 16;
-    int sectionIndex = y / 16;
-    TChunk * chunk = getChunk(chunkX, chunkZ, c);
-    if(chunk == NULL)
-        return ERR_FINDBLOCK_AT_UNLOADED_CHUNK;
-    if(sectionIndex >= chunk->sectionArrDim)
-        return ERR_FINDBLOCK_HEIGHT_BEYOND_CHUNKHEIGHT;
-    TBlockId block = chunk->sectionArr[sectionIndex].blockMatrix[y - sectionIndex * 16][z - chunkZ * 16][x - chunkX * 16];
-    return block.globalId;
-}
+#include "v1_12_2_chunkData.h"
+#include "../../../Defs/ErrorCodes.h"
+#include "../../../Std/internal_std_getChunk.h"
+#include "../../../Public/public_getBlockAtCoords.h"
+#include <math.h>
 
 
-void internal_v1_12_2_chunkData(const uint8_t *data, int dataLen, struct client *c) {
+void internal_v1_12_2_deserializer_chunkData(const uint8_t *data, int dataLen, struct client *c) {
 
     int sectionsPerChunk = 16;
     TChunk * chunkToLoad = malloc(sizeof(TChunk));
@@ -61,6 +30,7 @@ void internal_v1_12_2_chunkData(const uint8_t *data, int dataLen, struct client 
     int index = 0;
     while (primaryBitMask.value > 0) {
         if (primaryBitMask.value & 1) {
+            //foreach section
             // Do sections calculations here
             int bitsPerBlock = read_uint8fromNetworkEndian(dataStartPtr);
             bitsPerBlock = bitsPerBlock < 4 ? 4 : bitsPerBlock;

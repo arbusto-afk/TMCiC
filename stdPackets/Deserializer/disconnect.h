@@ -5,8 +5,8 @@
 #ifndef MCBC6_DISCONNECT_H
 #define MCBC6_DISCONNECT_H
 
-#include "../TVarInt/TVarInt.h"
-#include "../Defs/ClientDef.h"
+#include "../../TVarInt/TVarInt.h"
+#include "../../Defs/ClientDef.h"
 #include <stdio.h>
 #include <string.h>
 

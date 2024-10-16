@@ -1,4 +1,4 @@
-static void internal_v1_12_2_chunkData(const uint8_t * data, int dataLen, struct client * c){
+static void internal_v1_12_2_deserializer_chunkData(const uint8_t * data, int dataLen, struct client * c){
 
     TChunk chunkToLoad;
     //Todo optimize this based on actual section dim

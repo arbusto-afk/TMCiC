@@ -7,8 +7,8 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "../Defs/ClientDef.h"
-#include "../TVarInt/TVarInt.h"
+#include "../../Defs/ClientDef.h"
+#include "../../TVarInt/TVarInt.h"
 
 void internal_std_packet_setCompression(const uint8_t * data, int dataLen, struct client * c);
 #endif //MCBC6_SETCOMPRESSION_H

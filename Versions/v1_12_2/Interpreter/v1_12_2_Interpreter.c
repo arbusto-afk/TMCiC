@@ -2,7 +2,7 @@
 // Created by Ignacio on 9/22/2024.
 //
 
-#include "Interpreter.h"
+#include "v1_12_2_Interpreter.h"
 
 /*
  * Receves packetId as int, pointer to data after packetId, dataLen, c
@@ -15,20 +15,20 @@ static int pDef_v1_12_2_handlePacketById(int packetId, uint8_t * data, int dataL
     if (c->defaultGeneralHandler[c->state] != NULL && c->defaultGeneralHandler[c->state][packetId] != NULL)
     {
         handledPacket = 1;
-        printf("<dh:0x%02x>, ", packetId);
+     //   printf("<dh:0x%02x>, ", packetId);
         c->defaultGeneralHandler[c->state][packetId](data, dataLen, c);
     }
     //customPlayHandler
     if (c->state == CSTATE_PLAY && c->customPlayStateHandler != NULL && c->customPlayStateHandler[packetId] != NULL)
     {
         handledPacket = 1;
-        printf("<ch:0x%02x>, ", packetId);
+   //     printf("<ch:0x%02x>, ", packetId);
         c->customPlayStateHandler[packetId](data, dataLen, c);
     }
     //unhandled packet
     if(handledPacket == 0)
     {
-        printf("<uh:0x%02x>,", packetId);
+   //     printf("<uh:0x%02x>,", packetId);
     }
     fflush(stdout);
     return 0;
