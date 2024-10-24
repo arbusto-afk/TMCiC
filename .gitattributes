@@ -1,0 +1,9 @@
+# Set all other file types to be ignored by Linguist
+* linguist-language=ignore
+
+# Ensure C files are detected as C language
+*.c linguist-language=C
+*.h linguist-language=C
+
+# Ensure Makefiles are detected
+Makefile linguist-language=Makefile
