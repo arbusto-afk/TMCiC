@@ -6,6 +6,7 @@
 
 #include "../../stdPackets/stdPackets.h"
 #include "Deserializer/v1_12_2_chunkData.h"
+#include "Deserializer/v1_12_2_blockChange.h"
 //<editor-fold   desc="defines">
 #define TYPELONG_BYTESIZE 8
 
@@ -30,7 +31,8 @@ static packetHandler_t statePlayPackets[MAXPACKETID] = {
         [v1_12_2_CPID_CLIENTBOUND_KEEPALIVE] = internal_std_packet_KeepAlive,
         [v1_12_2_CPID_CLIENTBOUND_DISCONNECT_PLAY] = internal_std_packet_onDisconnect,
         [v1_12_2_CPID_CLIENTBOUND_CHUNKDATA] = internal_v1_12_2_deserializer_chunkData,
-        [v1_12_2_CPID_CLIENTBOUND_PLAYER_POSITION_AND_LOOK] = internal_std_packet_playerPositionAndLook
+        [v1_12_2_CPID_CLIENTBOUND_PLAYER_POSITION_AND_LOOK] = internal_std_packet_playerPositionAndLook,
+        [v1_12_2_CPID_CLIENTBOUND_BLOCKUPDATE] = internal_v1_12_2_deserializer_blockChange
 };
 
 

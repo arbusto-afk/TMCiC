@@ -73,10 +73,11 @@ int simpleSocket_setSocket(const char* hostname, int port) {
 int simpleSocket_receiveSocket(SOCKET sockfd, unsigned char* buffer, int bufdim) {
     int bytesReceived = recv(sockfd, buffer, bufdim, 0);
     if (bytesReceived == SOCKET_ERROR) {
+
       //  perror("recv failed");
         return -1;
     }
-    return bytesReceived;
+    return  bytesReceived;
 }
 
 // Function to send data through the specified socket

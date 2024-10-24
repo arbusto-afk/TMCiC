@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #define MAXBUFDIM 1024 * 1024 //1mb
+time_t NOW;
 
 void sendHandshakeAndLogin(client * c)
 {
@@ -65,6 +66,13 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     c->port = port;
     c->customPlayStateHandler = customHandler;
 
+    char filename[RECVLOGFILENAME_MAXDIM];
+    // sprintf(filename, "./log");
+    struct tm *t = localtime(&NOW);  // Convert to local time structure
+    strftime(filename, sizeof(filename), "./log-%d-%m_%H-%M-%S.txt", t);
+    //printf("main log file: %s\n", filename);
+    c->socketRecvLogPath = filename;
+
     sendHandshakeAndLogin(c);
     return c;
 }
@@ -90,6 +98,12 @@ void* readline_thread(void* arg) {
             } else {
                 printf("Invalid input. Use: getBlockAtVec3 x y z\n");
             }
+            char exitCheck[20];  // Allocate a writable buffer
+            if (sscanf(buffer, "%s", exitCheck) == 1 && strcmp(exitCheck, "exit12") == 0) {
+
+                printf("Exiting");
+                exit(12);
+            }
 
             fflush(stdout); // Flush the output buffer
         } else {
@@ -101,28 +115,18 @@ void* readline_thread(void* arg) {
     return NULL;
 }
 
-/*
- * Legacy do not use
- */
-int parser2(uint8_t * buf, int bufDim, client * c){
-    TVarInt res = sharedMain_readVarInt(buf, bufDim);
-    if(res.byteSize < 0) {
-        printf("verr %d\n", res.byteSize);
-            return 0;
-    }
-    puts("ok");
-    return res.value + res.byteSize;
-}
-
 void startListening(client *c) {
     uint8_t buf[MAXBUFDIM] = {0};
    // for(int i=0; i <MAXBUFDIM;i++)
      //   buf[i] = 0x00;
     int bufdim = 0;  // The total size of unprocessed data in the buffer
     uint8_t *p = buf;  // Pointer to where new data should be written
+
     while (1) {
         // Receive data into the buffer starting at p
         int recvb = simpleSocket_receiveSocket(c->sockfd, p, MAXBUFDIM - bufdim);
+        file_io_write_hex_to_file(c->socketRecvLogPath, p, recvb);
+
     //    writeBufferToFile(p, bufdim + recvb);  // Write only the new bytes received
 
         if (recvb > 0) {
@@ -158,7 +162,14 @@ void recvChunk(uint* buf, int datalen, client * c){
 //    printf("\nRecveiced chunk\n");
 };
 
+// Use strftime to format the time as month-day-hour-minute-second
+
 int main(void) {
+    NOW = time(NULL);  // Get the current time
+
+
+    //  unsigned char buf[] = {0,0,0};
+  //  file_io_write_buffer_to_file("\\\\wsl.localhost\\Ubuntu-22.04\\home\\arb\\mcbc6\\testFile.asd",buf , 1);
 
     char hostname[] = "ignacioFerrero.aternos.me";
     char username[] = "mcbc6";
@@ -170,7 +181,8 @@ int main(void) {
     //packetInterpreter_t customInterpreter = internal_v1_12_2_defaultInterpreter;
 
     client *c = initializeAndConnectClient(username, hostname, port, ver, NULL);
-
+    if(c == NULL)
+        exit(-2);
     pthread_t readline_thread_id;
 
     // Create a thread for the readline function

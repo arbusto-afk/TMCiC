@@ -18,6 +18,7 @@
 
 #define CHUNK_HASHVEC_DIM 256
 
+#define RECVLOGFILENAME_MAXDIM 256
 
 typedef struct TChunkHashNode{
    TChunk * chunk;
@@ -50,6 +51,8 @@ typedef struct client{
 
     float yaw;
     float pitch;
+
+    char socketRecvLogPath[RECVLOGFILENAME_MAXDIM];
 
     //for packet 0x23
     /*

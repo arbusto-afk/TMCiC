@@ -6,7 +6,7 @@
 
 TChunk * internal_std_getChunk(int x, int z, client *c) {
     // Calculate the hash key for the given chunk coordinates
-    int hashKey = hash2d(x, z);
+    int hashKey = hash2d(x, z) % CHUNK_HASHVEC_DIM;
 
     // Traverse the hash list for the given hash key
     TChunkHashNode *current = c->chunkHashVec[hashKey];
@@ -14,7 +14,7 @@ TChunk * internal_std_getChunk(int x, int z, client *c) {
     // Loop through the linked list to find the correct chunk
     while (current != NULL) {
         // Assuming the chunk structure has chunkX and chunkZ as the coordinates
-        if (current->chunk->x == x && current->chunk->x == z) {
+        if (current->chunk->x == x && current->chunk->z == z) {
             return current->chunk;  // Found the chunk, return it
         }
         current = current->tail;  // Move to the next node in the list

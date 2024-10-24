@@ -54,6 +54,9 @@ add_executable(mcbc6 main.c
         Defs/ColliderDefs.h
         Defs/PacketDef.h
         Defs/StdIdDef.h
+        Versions/v1_12_2/Deserializer/v1_12_2_blockChange.c
+        Versions/v1_12_2/Deserializer/v1_12_2_blockChange.h
+        Versions/v1_12_2/Deserializer/v1_12_2_chunkData.c
 )
 
 # Link zlib and math to the executable

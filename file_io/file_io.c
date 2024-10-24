@@ -19,6 +19,60 @@ int file_io_write_buffer_to_file(const char *file_path, const char *buffer, size
     return 0; // Success
 }
 
+int file_io_write_hex_to_file(const char *file_path, const char *buffer, size_t buffer_size) {
+    if(buffer_size <= 0)
+        return 0;
+    FILE *file = fopen(file_path, "a");  // Open file in write mode (overwrite)
+    if (!file) {
+        perror("Error opening file for writing");
+        return -1;
+    }
+
+    for (size_t i = 0; i < buffer_size; i++) {
+        // Write each byte as a two-character hex value followed by a space
+        if (fprintf(file, "%02X ", (unsigned char)buffer[i]) < 0) {
+            perror("Error writing to file");
+            fclose(file);
+            return -1;
+        }
+
+        // Add a newline after every 16 bytes for readability (optional)
+        if ((i + 1) % 16 == 0) {
+            if (fprintf(file, "\n") < 0) {
+                perror("Error writing newline to file");
+                fclose(file);
+                return -1;
+            }
+        }
+    }
+
+    fclose(file);
+    return 0; // Success
+}
+
+#include <stdarg.h>
+int file_io_write_formatted_to_file(const char *file_path, const char *format, ...) {
+    FILE *file = fopen(file_path, "a");  // Open in append mode to add formatted data
+    if (!file) {
+        perror("Error opening file for writing");
+        return -1;
+    }
+
+    va_list args;
+    va_start(args, format);
+
+    // Write the formatted string to the file using vfprintf
+    if (vfprintf(file, format, args) < 0) {
+        perror("Error writing formatted data to file");
+        va_end(args);
+        fclose(file);
+        return -1;
+    }
+
+    va_end(args);
+    fclose(file);
+    return 0; // Success
+}
 // Function to read a buffer from a file
 char *file_io_read_buffer_from_file(const char *file_path, size_t *buffer_size) {
     FILE *file = fopen(file_path, "rb");

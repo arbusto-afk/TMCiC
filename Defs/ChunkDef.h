@@ -10,6 +10,8 @@
 
     typedef struct {
         unsigned int globalId;
+        int longIndex;
+        int bitIndex;
     } TBlock;
 
     typedef struct {
