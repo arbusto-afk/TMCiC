@@ -71,8 +71,7 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     struct tm *t = localtime(&NOW);  // Convert to local time structure
     strftime(filename, sizeof(filename), "./log-%d-%m_%H-%M-%S.txt", t);
     //printf("main log file: %s\n", filename);
-    c->socketRecvLogPath = filename;
-
+    strcpy(c->socketRecvLogPath,filename);
     sendHandshakeAndLogin(c);
     return c;
 }
