@@ -7,7 +7,7 @@
 #include "Versions/v1_12_2/defaultGeneralHandler.h"
 
 #include "file_io/file_io.h"
-#include "Versions/v1_12_2/Interpreter/v1_12_2_Interpreter.h"
+//#include ""
 #include "Defs/ClientDef.h"
 #include "Versions/v1_12_2/HshakeAndLogin/HshakeAndLogin.h"
 #include "Defs/PacketDef.h"
@@ -48,9 +48,9 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     client *c = malloc(sizeof(client));
 
     c-> version = version;
-    //TODO map version to index;
+    //TODO map version to index in defaultGeneralHandlerArr;
     if(1) {
-        c->packetInterpreter = internal_v1_12_2_defaultInterpreter;
+     //   c->packetInterpreter = internal_parser_defaultInterpreter;
         c->defaultGeneralHandler = internal_v1_12_2_defaultGeneralHandler;
     }
     for(int i = 0; i < CHUNK_HASHVEC_DIM; i++)
@@ -69,42 +69,100 @@ client * initializeAndConnectClient(char *playerName, char *hostname, int port, 
     char filename[RECVLOGFILENAME_MAXDIM];
     // sprintf(filename, "./log");
     struct tm *t = localtime(&NOW);  // Convert to local time structure
-    strftime(filename, sizeof(filename), "./log-%d-%m_%H-%M-%S.txt", t);
+    strftime(filename, sizeof(filename), "./%d-%m_%H-%M-%S_log_Recv.txt", t);
     //printf("main log file: %s\n", filename);
     strcpy(c->socketRecvLogPath,filename);
+    char packetLogFilename[PACKETSLOGFILENAME_MAXDIM];
+    strftime(packetLogFilename, sizeof(packetLogFilename), "./%d-%m_%H-%M-%S_log_Handler.txt", t);
+    strcpy(c->packetInterpretingLogPath, packetLogFilename);
+
+    char packetParserLogFileName[PACKETSPARSERLOGFILENAME_MAXDIM];
+    strftime(packetParserLogFileName, sizeof(packetParserLogFileName), "./%d-%m_%H-%M-%S_log_parser.txt", t);
+    strcpy(
+            c->packetParserLogPath, packetParserLogFileName
+            );
     sendHandshakeAndLogin(c);
     return c;
 }
 
+void clearInputBuffer() {
+    int c;
+    // Read until a newline is found or EOF
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
 void* readline_thread(void* arg) {
     client *c = (client *)arg; // Assuming client is passed in `arg`
-    char buffer[256];
-    int x, y, z;
+    char buffer[1024] = {0};
+    char lastbuffer[1024] = {0};
 
     printf("Enter input (non-blocking readline):\n");
     while (1) {
         // Read input from the user
         if (fgets(buffer, sizeof(buffer), stdin)) {
-            // Check if the input matches the expected command and extract the coordinates
-            if (sscanf(buffer, "getBlockAtVec3 %d %d %d", &x, &y, &z) == 3) {
-                // Call the function and print the block globalId
-                TBlock *block = getBlockAtVec3(x, y, z, c);
-                if (block != NULL) {
-                    printf("Block at (%d, %d, %d) has globalId: %u\n", x, y, z, block->globalId);
-                } else {
-                    printf("Block not found at (%d, %d, %d)\n", x, y, z);
+            // Remove the newline character from buffer, if present
+            buffer[strcspn(buffer, "\n")] = '\0';
+
+            // Check for command length to ensure it fits buffer size
+            if (strlen(buffer) >= sizeof(buffer) - 1) {
+                printf("Input was too long! Unread characters exist.\n");
+                clearInputBuffer(); // Clear the unread characters
+            }
+            else
+            {
+                int match = 0;
+                int x, y, z;
+
+                // Check for the "l" command to reuse the last input
+                if (strcmp(buffer, "l") == 0) {
+                    if (strlen(lastbuffer) == 0) {
+                        printf("No previous command to reuse.\n");
+                    } else {
+                        match = 3;  // Reuse last command
+                        strcpy(buffer, lastbuffer);  // Load last command into buffer
+                    }
                 }
-            } else {
-                printf("Invalid input. Use: getBlockAtVec3 x y z\n");
-            }
-            char exitCheck[20];  // Allocate a writable buffer
-            if (sscanf(buffer, "%s", exitCheck) == 1 && strcmp(exitCheck, "exit12") == 0) {
 
-                printf("Exiting");
-                exit(12);
+                // Parse command for getBlockAtVec3 coordinates
+                if (sscanf(buffer, "getBlockAtVec3 %d %d %d", &x, &y, &z) == 3) {
+                    match = 1;
+                }
+
+                // Check for exit command
+                if (strcmp(buffer, "exit") == 0) {
+                    match = 2;
+                }
+
+                // Switch based on matched command
+                switch (match) {
+                    case 1:
+                        // Handle getBlockAtVec3 command
+                        TBlock *block = getBlockAtVec3(x, y, z, c);
+                        if (block != NULL) {
+                            printf("Block at (%d, %d, %d) has globalId: %u\n", x, y, z, block->globalId);
+                        } else {
+                            printf("Block not found at (%d, %d, %d)\n", x, y, z);
+                        }
+                        // Save current command as last command
+                        strcpy(lastbuffer, buffer);
+                        break;
+                    case 2:
+                        // Handle exit command
+                        printf("Exiting\n");
+                        exit(12);
+                        break;
+                    case 3:
+                        // Confirm reuse of last command
+                        printf("Reused last command: %s\n", buffer);
+                        break;
+                    default:
+                        // Unknown command
+                        printf("Unknown input: %s\n", buffer);
+                        strcpy(lastbuffer,buffer);
+                }
+                fflush(stdout); // Flush the output buffer
             }
 
-            fflush(stdout); // Flush the output buffer
         } else {
             printf("Error reading input.\n");
             fflush(stdout); // Flush the output buffer
@@ -151,6 +209,7 @@ void startListening(client *c) {
             } else {
                 perror("Socket error:");
             }
+            fflush(stdout);
             break;
         }
     }
@@ -177,7 +236,7 @@ int main(void) {
     //printf("START\n");
 
     packetHandler_t customHandler[MAXPACKETID] = {[0X20] = (packetHandler_t) recvChunk};
-    //packetInterpreter_t customInterpreter = internal_v1_12_2_defaultInterpreter;
+    //packetInterpreter_t customInterpreter = internal_parser_defaultInterpreter;
 
     client *c = initializeAndConnectClient(username, hostname, port, ver, NULL);
     if(c == NULL)

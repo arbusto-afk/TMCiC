@@ -26,6 +26,7 @@
 #include "../../Defs/ChunkDef.h"
 #include "../../Parser/parser.h"
 #include "../../TVarInt/sharedmain.h"
+#include "Deserializer/v1_12_2_multiBlockChange.h"
 #include "zlib.h"
 
 

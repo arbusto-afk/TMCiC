@@ -2,41 +2,53 @@
 // Created by Ignacio on 9/22/2024.
 //
 
-#include "v1_12_2_Interpreter.h"
+#include "Interpreter.h"
 
 /*
  * Receves packetId as int, pointer to data after packetId, dataLen, c
  * Returns 0 or error
  * Assumes internal_v1_12_2_defaultGeneralHandler != NULL
  */
-static int pDef_v1_12_2_handlePacketById(int packetId, uint8_t * data, int dataLen, client *c){
+#define LOGPACKETSTOCONSOLE 0
+static int internal_parser_interpreter_handlePacketById(int packetId, uint8_t * data, int dataLen, client *c){
     int handledPacket = 0;
     //internal_v1_12_2_defaultGeneralHandler
     if (c->defaultGeneralHandler[c->state] != NULL && c->defaultGeneralHandler[c->state][packetId] != NULL)
     {
         handledPacket = 1;
+#if LOGPACKETSTOCONSOLE
         printf("<dh:0x%02x>, ", packetId);
+    fflush(stdout);
+
+#endif
+
         c->defaultGeneralHandler[c->state][packetId](data, dataLen, c);
     }
     //customPlayHandler
     if (c->state == CSTATE_PLAY && c->customPlayStateHandler != NULL && c->customPlayStateHandler[packetId] != NULL)
     {
         handledPacket = 1;
+#if LOGPACKETSTOCONSOLE
         printf("<ch:0x%02x>, ", packetId);
+    fflush(stdout);
+
+#endif
         c->customPlayStateHandler[packetId](data, dataLen, c);
     }
     //unhandled packet
     if(handledPacket == 0)
     {
+#if LOGPACKETSTOCONSOLE
         printf("<uh:0x%02x>,", packetId);
-    }
     fflush(stdout);
-    return 0;
+#endif
+    }
+    return packetId;
 }
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
-static int packetWoutComp(const uint8_t * data, int dataLen, client * c)
+static int internal_parser_interpreter_packetWoutComp(const uint8_t * data, int dataLen, client * c)
 {
     int aux = VARINTMAXLEN;
     if(dataLen < VARINTMAXLEN)
@@ -46,12 +58,12 @@ static int packetWoutComp(const uint8_t * data, int dataLen, client * c)
         return packetId.byteSize;
 
     int fDataLen = dataLen - packetId.byteSize;
-    return pDef_v1_12_2_handlePacketById(packetId.value, packetId.byteAfterEnd, fDataLen, c);
+    return internal_parser_interpreter_handlePacketById(packetId.value, packetId.byteAfterEnd, fDataLen, c);
 }
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
-static int packetWithCompOff(const uint8_t * data, int dataLen, client * c) {
+static int internal_parser_interpreter_packetWithCompOff(const uint8_t * data, int dataLen, client * c) {
     TVarInt uncDataLen = sharedMain_readVarInt(data, dataLen);
     if (uncDataLen.byteSize < 0)
         return uncDataLen.byteSize;
@@ -67,12 +79,12 @@ static int packetWithCompOff(const uint8_t * data, int dataLen, client * c) {
         return packetId.byteSize;
 
     int fDataLen = dataLen - packetId.byteSize;
-    return pDef_v1_12_2_handlePacketById(packetId.value, packetId.byteAfterEnd, fDataLen, c);
+    return internal_parser_interpreter_handlePacketById(packetId.value, packetId.byteAfterEnd, fDataLen, c);
 }
 /*
  * Takes data (excluding first packetLen), datalen and c
  */
-static int packetWithCompOn(const uint8_t * data, int dataLen, client * c)
+static int internal_parser_interpreter_packetWithCompOn(const uint8_t * data, int dataLen, client * c)
     {
         TVarInt uncompressedLen = sharedMain_readVarInt(data, dataLen);
         if(uncompressedLen.byteSize < 0)
@@ -113,7 +125,7 @@ static int packetWithCompOn(const uint8_t * data, int dataLen, client * c)
             return packetId.byteSize - 2;
         }
 
-        pDef_v1_12_2_handlePacketById(packetId.value,packetId.byteAfterEnd, uncompressedLen.value, c);
+        internal_parser_interpreter_handlePacketById(packetId.value, packetId.byteAfterEnd, uncompressedLen.value, c);
 
        // printf("Prefree");
        //    fflush(stdout);
@@ -123,11 +135,11 @@ static int packetWithCompOn(const uint8_t * data, int dataLen, client * c)
 /*
  * Assumes complete packet
  */
-int internal_v1_12_2_defaultInterpreter(const uint8_t *buf, client *c)
+int internal_parser_defaultInterpreter(const uint8_t *buf, client *c)
     {
             TVarInt packetLen = sharedMain_readVarInt(buf, VARINTPACKETMAXLEN);
             if (c->compressionTreshold < 0) {
-                return packetWoutComp(packetLen.byteAfterEnd, packetLen.value, c);
+                return internal_parser_interpreter_packetWoutComp(packetLen.byteAfterEnd, packetLen.value, c);
             }
             else
             {
@@ -135,9 +147,9 @@ int internal_v1_12_2_defaultInterpreter(const uint8_t *buf, client *c)
                 TVarInt uncompressedPacketLen = sharedMain_readVarInt(packetLen.byteAfterEnd, VARINTPACKETMAXLEN);
 
                 if (uncompressedPacketLen.value == 0)
-                    return packetWithCompOff(packetLen.byteAfterEnd, packetLen.value, c);
+                    return internal_parser_interpreter_packetWithCompOff(packetLen.byteAfterEnd, packetLen.value, c);
                 else
-                    return packetWithCompOn(packetLen.byteAfterEnd, packetLen.value, c);
+                    return internal_parser_interpreter_packetWithCompOn(packetLen.byteAfterEnd, packetLen.value, c);
 
             }
         }

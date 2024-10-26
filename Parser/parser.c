@@ -3,6 +3,8 @@
 //
 
 #include "parser.h"
+#include <string.h>
+
 
 //InterpreterFunc interpreters[] = {pDef_V12_2_2_pInterpreter()};
 
@@ -65,28 +67,40 @@ int parser_parseMcPacketsFromBuf(uint8_t *buf, int bufDim, client *c)
             return procBytes;
         }
 
-        // Handle complete packet
-     /*
-        printf("Parsed <");
-        for(int i=0; i <totalPacketLen && i < 5; i++)
-            printf("%02x ", buf[i]);
-        if(totalPacketLen >= 5) {
-            printf("... ");
-            for(int i = totalPacketLen - 10; i < totalPacketLen; i++)
-                printf("%02x ", buf[i]);
-            printf(">\n");
-        } else {
-            printf(">\n");
-        }*/
-        int handlerExitCode = c->packetInterpreter(buf, c);
-        if (handlerExitCode != 0)
+#define LOGPACKETSTOFILE 1
+#define LOGPARSINGTOFILE 1
+
+        //print error or log success
+        int handlerExitCode = internal_parser_defaultInterpreter(buf, c);
+        if (handlerExitCode < 0)
         {
-            printf("Parser: Error interpreting complete packet %d with totallen: %d\n", handlerExitCode, totalPacketLen);
-          //  for(int i = 0; i < 50; i++)
-          //      printf( "%02x ", buf[i]);
-         //   fflush(stdout);
+            char msg[256];
+            sprintf(msg,"Parser: Error %d interpreting packet with seq:", handlerExitCode);
+            printf("%s", msg);
+            file_io_write_formatted_to_file(c->packetInterpretingLogPath, "%s", msg);
+            for(int i = 0; i < 25; i++) {
+                printf("%02x ", buf[i]);
+                file_io_write_formatted_to_file(c->packetInterpretingLogPath, "%02x", buf[i]);
+            }
+            file_io_write_formatted_to_file(c->packetInterpretingLogPath, "\n");
+            printf("\n");
+            fflush(stdout);
             return procBytes;
         }
+        else
+        {
+#if LOGPACKETSTOFILE
+    //        printf("succesfully interpt packet %d\n", handlerExitCode);
+            file_io_write_formatted_to_file(c->packetInterpretingLogPath, "packet [0x%02x] %d\n",handlerExitCode, handlerExitCode);
+#endif
+        }
+
+#if LOGPARSINGTOFILE
+        file_io_write_formatted_to_file(c->packetParserLogPath, "<");
+        file_io_write_hex_to_file(c->packetParserLogPath, buf, totalPacketLen);
+        file_io_write_formatted_to_file(c->packetParserLogPath, ">\n");
+#endif
+
 
         // Move the buffer forward and update counters
      //   printf("<p:%d>", totalPacketLen);

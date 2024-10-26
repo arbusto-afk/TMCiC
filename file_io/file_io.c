@@ -19,7 +19,7 @@ int file_io_write_buffer_to_file(const char *file_path, const char *buffer, size
     return 0; // Success
 }
 
-int file_io_write_hex_to_file(const char *file_path, const char *buffer, size_t buffer_size) {
+int file_io_write_hex_to_file(const char *file_path, const char *buffer, int buffer_size) {
     if(buffer_size <= 0)
         return 0;
     FILE *file = fopen(file_path, "a");  // Open file in write mode (overwrite)
@@ -37,7 +37,7 @@ int file_io_write_hex_to_file(const char *file_path, const char *buffer, size_t 
         }
 
         // Add a newline after every 16 bytes for readability (optional)
-        if ((i + 1) % 16 == 0) {
+        if ((i + 1) % 32 == 0) {
             if (fprintf(file, "\n") < 0) {
                 perror("Error writing newline to file");
                 fclose(file);

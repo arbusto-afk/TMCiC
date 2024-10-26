@@ -19,6 +19,8 @@
     typedef int SOCKET;       // Use int as SOCKET type on Linux
 #endif
 
+
+#define LOG_SOCKET_SEND 0
 #include <stdint.h>
 
 // Function to initialize the socket library (does nothing on Linux, initializes Winsock on Windows)

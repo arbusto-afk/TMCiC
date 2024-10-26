@@ -87,11 +87,13 @@ int simpleSocket_send(SOCKET sockfd, const uint8_t *data, int datalen) {
         perror("send failed");
         return -1;
     }
+#if LOG_SOCKET_SEND
     printf("Sent %d bytes <", bytesSent);
     for (int i = 0; i < datalen; i++) {
         printf("%02x ", data[i]);
     }
     printf(">\n");
+#endif
     return bytesSent;
 }
 

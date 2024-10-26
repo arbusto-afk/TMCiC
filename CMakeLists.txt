@@ -21,7 +21,7 @@ add_executable(mcbc6 main.c
         crossSocket/crossSocket.c
         Versions/v1_12_2/defaultGeneralHandler.c
         file_io/file_io.c
-        Versions/v1_12_2/Interpreter/v1_12_2_Interpreter.c
+        Parser/Interpreter/Interpreter.c
         Versions/v1_12_2/HshakeAndLogin/HshakeAndLogin.c
         Defs/ChunkDef.h
         Defs/ChunkDef.h
@@ -57,6 +57,8 @@ add_executable(mcbc6 main.c
         Versions/v1_12_2/Deserializer/v1_12_2_blockChange.c
         Versions/v1_12_2/Deserializer/v1_12_2_blockChange.h
         Versions/v1_12_2/Deserializer/v1_12_2_chunkData.c
+        Versions/v1_12_2/Deserializer/v1_12_2_multiBlockChange.c
+        Versions/v1_12_2/Deserializer/v1_12_2_multiBlockChange.h
 )
 
 # Link zlib and math to the executable

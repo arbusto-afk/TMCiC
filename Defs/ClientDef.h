@@ -19,6 +19,8 @@
 #define CHUNK_HASHVEC_DIM 256
 
 #define RECVLOGFILENAME_MAXDIM 256
+#define PACKETSLOGFILENAME_MAXDIM 256
+#define PACKETSPARSERLOGFILENAME_MAXDIM 256
 
 typedef struct TChunkHashNode{
    TChunk * chunk;
@@ -38,7 +40,7 @@ typedef struct client{
     char * version;
     //both func should be assigned as soon as client is initiliazed;
 
-    int (*packetInterpreter)(uint8_t *buf, struct client *c); //func called by parser, assigned depending on ver
+   // int (*packetInterpreter)(uint8_t *buf, struct client *c); //func called by parser, assigned depending on ver
     void (***defaultGeneralHandler)(const uint8_t * data, int datalen, struct client * c);
     void (**customPlayStateHandler)(const uint8_t * data, int datalen, struct client * c); //packetHandler_t
 
@@ -53,6 +55,8 @@ typedef struct client{
     float pitch;
 
     char socketRecvLogPath[RECVLOGFILENAME_MAXDIM];
+    char packetInterpretingLogPath[PACKETSLOGFILENAME_MAXDIM];
+    char packetParserLogPath[PACKETSPARSERLOGFILENAME_MAXDIM];
 
     //for packet 0x23
     /*

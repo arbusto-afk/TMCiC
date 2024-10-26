@@ -12,7 +12,7 @@
 #include "../TVarInt//sharedmain.h"
 #include "../TVarInt/TVarInt.h"
 #include "../file_io/file_io.h"
-
+#include "Interpreter/Interpreter.h"
 #define MAXPACKETID 128
 
 int parser_isSupportedVersion(char * version);
